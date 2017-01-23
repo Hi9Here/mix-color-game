@@ -33,10 +33,6 @@
     
     <template is="dom-if" if="[[showTips]]">[[prob]]<paper-input label="level" type="number" min=1 value="{{level}}"></paper-input></template>
     <iron-localstorage name="my-app-storage" value="{{level}}" on-iron-localstorage-load-empty="reset"></iron-localstorage>
-    
-    
-    
-    
   </template>
 </dom-module>
 <script>
@@ -69,6 +65,9 @@
       codes:{
         value:["r","g","b","k","w"],
         type:Array,
+      },
+      saved:{
+        computed:"firebaseSave(level)",
       },
     },
     add: function(e){
@@ -132,11 +131,25 @@
       }
       return prob
     },
-    reset: function(undefined){
+    reset: function(){
       this.picked = []
     },
-    tips: function(undefined){
+    tips: function(){
       this.showTips = !this.showTips
     },
+    ready: function() {
+      // https://firebase.google.com/docs/database/web/read-and-write
+      that = this
+      if (firebase) {
+        firebase.database().ref("/level/").once('value').then(function(snapshot) {
+          if (snapshot.val()) {
+            that.level = snapshot.val()
+          }
+        })
+      }
+    },
+    firebaseSave: function(level) {
+      return firebase.database().ref().update({"/level/":level});
+    }
   })
 </script>
