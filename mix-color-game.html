@@ -1,0 +1,142 @@
+<link rel="import" href="../iron-localstorage/iron-localstorage.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-slider/paper-slider.html">
+<link rel="import" href="../icon-icons/iron-icons.html">
+<link rel="import" href="../polymer/polymer.html">
+<!--
+  `<mix-color-game></mix-color-game>` demo
+  @demo demo.html
+-->
+<dom-module id="mix-color-game">
+  <template>
+    <style>
+      :host {text-align: center;display:inline-block;background:#444;padding:10px;width:320px;line-height:80px}
+      .r {background:#f00}
+      .g {background:#0f0}
+      .b {background:#00f}
+      .k {background:#000}
+      .w {background:#fff}
+      paper-button {margin:7px}
+      div>div {
+        padding: 2.5%;text-align: center;display:inline-block;width:44%;
+      }
+    </style>
+    <div>
+      <div style="background:rgb[[target]]" on-tap="tips"><template is="dom-if" if="[[showTips]]">[[target]]</template>&nbsp</div>
+      <div style="background:rgb[[mix]];color:#fff" on-tap="reset"><template is="dom-if" if="[[showTips]]">[[mix]]</template>&nbsp</div>
+    </div>
+    <paper-slider style="width:100%" min="0" max="[[prob.length]]" value="[[picked.length]]"></paper-slider>
+    <template is="dom-repeat" items="[[codes]]">
+      <paper-button on-tap="add" class$="[[item]]" thecolor$="[[item]]">&nbsp</paper-button>
+    </template>
+    
+    <template is="dom-if" if="[[showTips]]">[[prob]]<paper-input label="level" type="number" min=1 value="{{level}}"></paper-input></template>
+    <iron-localstorage name="my-app-storage" value="{{level}}" on-iron-localstorage-load-empty="reset"></iron-localstorage>
+    
+    
+    
+    
+  </template>
+</dom-module>
+<script>
+  Polymer({
+    is: "mix-color-game",
+    properties:{
+      picked:{
+        type:Array,
+        value:["n"],
+      },
+      mix:{
+        computed:"getMix(picked,picked.*)",
+      },
+      target:{
+        computed:"getMix(prob,prob.*)",
+        type:String,
+      },
+      done:{
+        type:Boolean,
+        value:false,
+        computed:"isitDone(mix,target)",
+      },
+      prob:{
+        computed:"getProb(level,codes)",
+      },
+      level:{
+        type:Number,
+        value:1,
+      },
+      codes:{
+        value:["r","g","b","k","w"],
+        type:Array,
+      },
+    },
+    add: function(e){
+      this.push("picked",e.target.getAttribute("thecolor"))
+      console.log(this.picked)
+      if (this.picked.length > this.level){
+        this.trys++
+        this.reset()
+      }
+    },
+    getMix: function(picks){
+      var dl
+      var kl
+      if (picks.length) {
+        dl = Math.floor(255/picks.length)
+      } else {
+        dl = 255
+      }
+      kl = Math.floor(dl/2)
+      var picksSum = picks.reduce(function(sum, currentValue, currentIndex, array) {
+        switch(currentValue) {
+          case "r":
+            sum[0] = sum[0]+dl
+            break
+          case "g":
+            sum[1] = sum[1]+dl
+            break
+          case "b":
+            sum[2] = sum[2]+dl
+            break
+          case "k":
+            sum = [sum[0]-kl,sum[1]-kl,sum[2]-kl]
+            break
+          case "w":
+            sum = [sum[0]+dl,sum[1]+dl,sum[2]+dl]
+            break
+        }
+        return sum.map(function(x) {
+          x = Math.min(x,255)
+          x = Math.max(x,0)
+          return x
+        })
+      }, [0,0,0])
+      
+      return "(" + picksSum + ")"
+      
+    },
+    isitDone: function(a,b){
+      if (a == b) {
+        this.level++
+        this.picked = []
+      }
+      return a == b
+    },
+    getProb: function(level,colours){
+      var prob = []
+      
+      this.set("picked",[])
+      for (var i = 0; i < level; i++) {
+        prob.push(colours[ Math.floor( Math.random() * colours.length)])
+      }
+      return prob
+    },
+    reset: function(undefined){
+      this.picked = []
+    },
+    tips: function(undefined){
+      this.showTips = !this.showTips
+    },
+  })
+</script>
